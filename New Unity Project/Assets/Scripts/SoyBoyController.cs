@@ -22,6 +22,10 @@ public class SoyBoyController : MonoBehaviour
     private float jumpDuration;
     public float airAccel = 3f;
     public float jump = 14f;
+    public AudioClip runClip;
+    public AudioClip jumpClip;
+    public AudioClip slideClip;
+    private AudioSource audioSource;
 
     void Awake()
     {
@@ -31,6 +35,8 @@ public class SoyBoyController : MonoBehaviour
 
         width = GetComponent<Collider2D>().bounds.extents.x + 0.1f;
         height = GetComponent<Collider2D>().bounds.extents.y + 0.2f;
+
+        audioSource = GetComponent<AudioSource>();
     }
 
     // Start is called before the first frame update
@@ -145,12 +151,17 @@ public class SoyBoyController : MonoBehaviour
             animator.SetBool("IsJumping", false);
             jumpDuration = 0f;
         }
-        if (PlayerIsOnGround() && isJumping == false)
+        if (PlayerIsOnGround() && !isJumping)
         {
             if (input.y > 0f)
             {
                 isJumping = true;
-                animator.SetBool("IsOnWall", false);
+                PlayAudioClip(jumpClip);
+            }
+            animator.SetBool("IsOnWall", false);
+            if (input.x < 0f || input.x > 0f)
+            {
+                PlayAudioClip(runClip);
             }
         }
         if (jumpDuration > jumpDurationThreshold) input.y = 0f;
@@ -192,12 +203,15 @@ public class SoyBoyController : MonoBehaviour
         * acceleration, 0));
         // 4
         rb.velocity = new Vector2(xVelocity, yVelocity);
-        if (IsWallToLeftOrRight() && !PlayerIsOnGround() && input.y == 1)
+        if (IsWallToLeftOrRight() && !PlayerIsOnGround()
+         && input.y == 1)
         {
+
             rb.velocity = new Vector2(-GetWallDirection() * speed
             * 0.75f, rb.velocity.y);
             animator.SetBool("IsOnWall", false);
             animator.SetBool("IsJumping", true);
+            PlayAudioClip(jumpClip);
         }
         else if (!IsWallToLeftOrRight())
         {
@@ -207,10 +221,19 @@ public class SoyBoyController : MonoBehaviour
         if (IsWallToLeftOrRight() && !PlayerIsOnGround())
         {
             animator.SetBool("IsOnWall", true);
+            PlayAudioClip(slideClip);
         }
         if (isJumping && jumpDuration < jumpDurationThreshold)
         {
             rb.velocity = new Vector2(rb.velocity.x, jumpSpeed);
+        }
+    }
+
+    void PlayAudioClip(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+        {
+            if (!audioSource.isPlaying) audioSource.PlayOneShot(clip);
         }
     }
 }
